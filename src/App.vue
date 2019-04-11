@@ -1,10 +1,16 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <router-link to="/">Home</router-link> | 
+      <router-link to="/heart">Heart Rate</router-link> | 
+      <router-link to="/myo">Myo ArmBand</router-link> | 
+      <router-link to="/drone">Drone</router-link> | 
+      <router-link to="/printer">Thermal Printer</router-link> | 
+      <router-link to="/adb">ADB</router-link> | 
+      <router-link to="/nfc">WebNFC</router-link> | 
+      <router-link to="/webshop">Webshop</router-link>
     </div>
-    <router-view />
+    <router-view/>
   </div>
 </template>
 

@@ -3,6 +3,10 @@ import App from "./App.vue";
 import router from "./router";
 import "./registerServiceWorker";
 
+import WebBluetooth from "./plugins/WebBluetooth";
+
+Vue.use(WebBluetooth);
+
 Vue.config.productionTip = false;
 
 new Vue({
