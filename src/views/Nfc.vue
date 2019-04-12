@@ -64,7 +64,7 @@ export default {
                         data: {
                           id: "12345678900987654321",
                           name: "Majid Hajian",
-                          role: "Cachier"
+                          role: "Cashier"
                         }
                       }
                     ]

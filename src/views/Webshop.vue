@@ -32,7 +32,7 @@
         <br>
         <br>
         <br>
-        <button @click="print">print</button>
+        <button @click="print" v-if="printCharacteristic">print</button>
       </div>
     </div>
   </div>
@@ -51,6 +51,16 @@ export default {
           (acc += `${i} - ${item.id} - ${item.name} - $${item.price} <br>`),
         ""
       );
+    },
+    receiptPrint: function() {
+      return `${this.rowItems}<br>
+    <br>
+            ------------------------------- <br>
+<br>
+                                Total: $${this.items.reduce(
+                                  (acc, item) => (acc += item.price),
+                                  0
+                                )} <br>`;
     },
     receipt: function() {
       const r = `
@@ -83,15 +93,13 @@ export default {
       device: null,
       message: "",
       ENDPOINT: 3,
+      printCharacteristic: null,
       operator: {
         id: "",
         name: "",
         role: ""
       },
-      items: [
-        { id: new Date().getTime(), name: "Book name 1", price: 100 },
-        { id: new Date().getTime(), name: "Book name 2", price: 50 }
-      ]
+      items: []
     };
   },
   created() {
@@ -111,10 +119,17 @@ export default {
                 if (record.data.id === "12345678900987654321") {
                   this.operator = record.data;
                   this.isAuth = true;
-                } else {
+                } else if (record.data.id !== "12345678900987654321") {
                   this.operatorNotAllow = `${
                     record.data.name
                   }, sorry you are not allowed`;
+                } else {
+                  // detect products
+                  this.items.push({
+                    id: record.data.id,
+                    price: record.data.price,
+                    name: record.data.name
+                  });
                 }
               }
             });
@@ -134,46 +149,42 @@ export default {
       });
     },
     connect: async function() {
-      if (this.device === null) {
-        // get all connected usb devices
-        const rawdevice = await navigator.usb.requestDevice({ filters: [] });
-        // do the setup procedure on the connected device
-        return this.setup(rawdevice);
+      if (this.printCharacteristic === null) {
+        navigator.bluetooth
+          .requestDevice({
+            filters: [
+              {
+                services: ["000018f0-0000-1000-8000-00805f9b34fb"]
+              }
+            ]
+          })
+          .then(device => {
+            console.log("> Found " + device.name);
+            console.log("Connecting to GATT Server...");
+            return device.gatt.connect();
+          })
+          .then(server =>
+            server.getPrimaryService("000018f0-0000-1000-8000-00805f9b34fb")
+          )
+          .then(service =>
+            service.getCharacteristic("00002af1-0000-1000-8000-00805f9b34fb")
+          )
+          .then(characteristic => {
+            // Cache the characteristic
+            this.printCharacteristic = characteristic;
+          })
+          .catch(e => console.log(e));
       }
       return this.device;
     },
-    print: async function() {
-      // fetch value from input
-      const string = this.receipt.trim().replace("<br>", "\n");
-      // use the built in TextEncoder to
-      // convert a String to an Uint8Array containing utf-8 encoded text
+    print: function() {
+      // Get the bytes for the text
       const encoder = new TextEncoder();
-      const data = encoder.encode(string);
-      // send the bytes to the printer
-      await this.device.transferOut(this.ENDPOINT, data);
-    },
-    setup: async function(rawdevice) {
-      // open the device (initiate communication)
-      await rawdevice.open();
-      // select the devices configuration descriptor
-      await rawdevice.selectConfiguration(1);
-      // claim the device interfaces
-      rawdevice = await this.claimInterface(rawdevice);
-      this.device = rawdevice;
-      return rawdevice;
-    },
-    // walk over all interfaces of the device
-    // check if they're claimed (and do claim them, if they're not yet)
-    claimInterface: async function(d) {
-      for (const config of d.configurations) {
-        for (const iface of config.interfaces) {
-          if (!iface.claimed) {
-            await d.claimInterface(iface.interfaceNumber);
-            return d;
-          }
-        }
-      }
-      return d;
+      // Add line feed + carriage return chars to text
+      const data = encoder.encode(this.receiptPrint.toString());
+      return this.printCharacteristic.writeValue(data).then(() => {
+        console.log("Write done.");
+      });
     }
   }
 };
@@ -208,8 +219,8 @@ export default {
   }
   .items {
     font-size: 25px;
-     @media (max-width: 600px) {
-     font-size: 15px;
+    @media (max-width: 600px) {
+      font-size: 15px;
     }
     font-weight: bold;
     text-align: left;

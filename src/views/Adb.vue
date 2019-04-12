@@ -10,7 +10,7 @@
             type="text"
             @keyUp.enter="install"
             v-model="url"
-            placeholder="placeholder"
+            placeholder="/sdcard/Download/test.apk"
             class="stdin"
           >
         </div>
@@ -28,7 +28,7 @@
             type="text"
             @keyUp.enter="() => shell(shellStr)"
             v-model="shellStr"
-            placeholder="placeholder"
+            placeholder="ls /sdcard"
             class="stdin"
           >
         </div>
@@ -134,10 +134,10 @@ export default {
       this.stdout = html;
     },
     async download() {
-      let conetnt = await this.sync.pull("/sdcard/DCIM/Camera/text_test.jpg");
+      let conetnt = await this.sync.pull("/sdcard/Download/test_webadb.txt");
       let a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([conetnt]));
-      a.download = "text_test.jpg";
+      a.download = "test_webadb.txt";
       a.click();
     }
   }
